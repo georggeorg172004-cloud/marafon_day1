@@ -290,28 +290,28 @@ const chatMessages = [{"time": 0.794, "username": "АннаМ", "message": "Пр
 
 var msgIndex = 0;
 
-// Kinescope Iframe API init
-(async function() {
-  var script = document.createElement('script');
-  script.src = 'https://player.kinescope.io/latest/iframe.player.js';
-  document.head.appendChild(script);
-  await new Promise(function(r) { script.onload = r; });
-
-  var player = await window.Kinescope.IframePlayer.create('player-container', {
+// Kinescope Iframe API
+window.onKinescopeIframeAPIReady = async function(factory) {
+  var player = await factory.create('player-container', {
     videoId: 'bLEH99sCkehVC859Uzg6hb',
     frameBorder: 0,
     allow: 'autoplay; fullscreen; picture-in-picture; encrypted-media',
   });
 
-  var Events = window.Kinescope.IframePlayer.Events;
-
-  player.on(Events.TimeUpdate, function(e) {
+  player.on(factory.Events.TimeUpdate, function(e) {
     syncChatToTime(e.currentTime);
   });
 
-  player.on(Events.Seeked, function(e) {
+  player.on(factory.Events.Seeked, function(e) {
     syncChatToTime(e.currentTime);
   });
+};
+
+// Load Kinescope script
+(function() {
+  var s = document.createElement('script');
+  s.src = 'https://player.kinescope.io/latest/iframe.player.js';
+  document.head.appendChild(s);
 })();
 
 const colors = [
