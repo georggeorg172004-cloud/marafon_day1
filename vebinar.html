@@ -51,16 +51,27 @@ body::before {
   box-shadow: 0 8px 40px rgba(0,0,0,0.6);
 }
 .video-wrap iframe { position: absolute; top:0; left:0; width:100%; height:100%; border:0; }
+
+/* ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ КНОПКИ */
 .cta-btn {
   display: block; width: 100%; padding: 18px;
   background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
   color: #fff; text-align: center; text-decoration: none;
   font-family: "Unbounded", sans-serif; font-size: 15px; font-weight: 600;
   letter-spacing: 0.03em; border-radius: 10px;
-  transition: transform 0.15s, box-shadow 0.15s;
   box-shadow: 0 4px 24px rgba(230,57,70,0.35);
+  
+  /* Скрываем кнопку по умолчанию */
+  opacity: 0;
+  pointer-events: none; /* чтобы нельзя было кликнуть, пока она невидима */
+  transition: opacity 0.5s ease, transform 0.15s, box-shadow 0.15s;
+}
+.cta-btn.show {
+  opacity: 1;
+  pointer-events: auto;
 }
 .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(230,57,70,0.5); }
+
 .chat-col {
   width: 320px; flex-shrink: 0; display: flex; flex-direction: column;
   background: rgba(17,17,21,0.85); border: 1px solid #1e1e26;
@@ -125,12 +136,12 @@ body::before {
   <div class="video-col">
     <div class="video-wrap">
       <iframe id="kplayer"
-        src="https://kinescope.io/embed/tN1nc6CzcniFdMV5JbwtrJ?autoplay=0"
+        src="https://kinescope.io/embed/tN1nc6CzcniFdMV5JbwtrJ"
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write;"
         allowfullscreen>
       </iframe>
     </div>
-    <a class="cta-btn" href="https://leonidtalpis.com/mvs-seminar" target="_blank">
+    <a id="offerBtn" class="cta-btn" href="https://leonidtalpis.com/mvs-seminar" target="_blank">
       Записаться на семинар →
     </a>
   </div>
@@ -204,6 +215,12 @@ function syncChatToTime(currentTime) {
   }
 }
 
+// -----------------------
+// НАСТРОЙКА ПОЯВЛЕНИЯ КНОПКИ
+// -----------------------
+const SHOW_BUTTON_AT_SECOND = 78; // 1 минута 18 секунд
+const offerBtn = document.getElementById("offerBtn");
+
 // Надежная инициализация плеера через официальную библиотеку player.js
 const player = new playerjs.Player(iframe);
 
@@ -215,6 +232,13 @@ player.on('ready', () => {
     player.on('timeupdate', (data) => {
         if (data && typeof data.seconds === 'number') {
             syncChatToTime(data.seconds);
+            
+            // Управляем видимостью кнопки
+            if (data.seconds >= SHOW_BUTTON_AT_SECOND) {
+                offerBtn.classList.add("show");
+            } else {
+                offerBtn.classList.remove("show");
+            }
         }
     });
 
@@ -222,6 +246,13 @@ player.on('ready', () => {
     player.on('seeked', (data) => {
         if (data && typeof data.seconds === 'number') {
             syncChatToTime(data.seconds);
+            
+            // Управляем видимостью кнопки после перемотки
+            if (data.seconds >= SHOW_BUTTON_AT_SECOND) {
+                offerBtn.classList.add("show");
+            } else {
+                offerBtn.classList.remove("show");
+            }
         }
     });
 });
