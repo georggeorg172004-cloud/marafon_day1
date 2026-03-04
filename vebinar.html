@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Вебинар</title>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700&family=Golos+Text:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="text/javascript" src="https://cdn.embed.ly/player-0.1.0.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -124,7 +125,7 @@ body::before {
   <div class="video-col">
     <div class="video-wrap">
       <iframe id="kplayer"
-        src="https://kinescope.io/embed/tN1nc6CzcniFdMV5JbwtrJ"
+        src="https://kinescope.io/embed/tN1nc6CzcniFdMV5JbwtrJ?autoplay=0"
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write;"
         allowfullscreen>
       </iframe>
@@ -175,7 +176,6 @@ const syncDot = document.getElementById("syncDot");
 const iframe = document.getElementById("kplayer");
 
 let msgIndex = 0;
-let playerReady = false;
 
 function addMessage(msg) {
   const color = getColor(msg.username);
@@ -204,48 +204,26 @@ function syncChatToTime(currentTime) {
   }
 }
 
-function sendToPlayer(method, args) {
-  iframe.contentWindow.postMessage({
-    context: "player.js",
-    method: method,
-    args: args || []
-  }, "*"); // Заменено на "*", чтобы работало с player.kinescope.io
-}
+// Надежная инициализация плеера через официальную библиотеку player.js
+const player = new playerjs.Player(iframe);
 
-window.addEventListener("message", function(e) {
-  // Разрешаем принимать сообщения с любых поддоменов kinescope (включая player.kinescope.io)
-  if (typeof e.origin === "string" && !e.origin.includes("kinescope")) return;
-  
-  var data = e.data;
-  
-  // Плеер иногда может отдавать данные в формате строки
-  if (typeof data === "string") {
-    try { data = JSON.parse(data); } catch(err) { return; }
-  }
-
-  if (!data || !data.event) return;
-
-  if (data.event === "ready") {
-    playerReady = true;
+player.on('ready', () => {
+    // Включаем зеленую точку, когда связь с плеером установлена
     syncDot.classList.add("active");
-    // Подписываемся на отслеживание времени и перемотки
-    sendToPlayer("addEventListener", ["timeupdate"]);
-    sendToPlayer("addEventListener", ["seeked"]);
-  }
 
-  if (data.event === "timeupdate" || data.event === "seeked") {
-    // Достаем текущую секунду (в разных версиях API она может лежать в value или data)
-    var currentTime = null;
-    if (data.value && typeof data.value.currentTime === "number") {
-        currentTime = data.value.currentTime;
-    } else if (data.data && typeof data.data.currentTime === "number") {
-        currentTime = data.data.currentTime;
-    }
+    // Слушаем прогресс просмотра видео
+    player.on('timeupdate', (data) => {
+        if (data && typeof data.seconds === 'number') {
+            syncChatToTime(data.seconds);
+        }
+    });
 
-    if (currentTime !== null) {
-      syncChatToTime(currentTime);
-    }
-  }
+    // Слушаем перемотку пользователем
+    player.on('seeked', (data) => {
+        if (data && typeof data.seconds === 'number') {
+            syncChatToTime(data.seconds);
+        }
+    });
 });
 </script>
 </body>
