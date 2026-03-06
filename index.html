@@ -126,129 +126,107 @@ body::before {
   </div>
 </div>
 
-<script src="https://player.kinescope.io/latest/iframe.player.js"></script>
 <script>
-(function() {
-  // Banner scenario from JSON
-  const scenario = [
-    {"timeshift":1530000,"image":"https://cdn.bizon365.ru/181751/mirovozzrenka__3_.png","url":"https://leonidtalpis.com/mvs-seminar?utm_source=bizon&utm_campaign=marathon050326&utm_term=web060326","timer":363},
-    {"timeshift":1893000,"image":"","url":""},
-    {"timeshift":3760000,"image":"https://cdn.bizon365.ru/181751/ts__3_.png","url":"https://leonidtalpis.com/the_assembly_point/payment?utm_source=bizon&utm_campaign=marathon050326&utm_term=web060326","timer":250},
-    {"timeshift":4010000,"image":"","url":""},
-    {"timeshift":4830000,"image":"https://cdn.bizon365.ru/181751/ts__3_.png","url":"https://leonidtalpis.com/the_assembly_point/payment?utm_source=bizon&utm_campaign=marathon050326&utm_term=web060326","timer":100},
-    {"timeshift":4930000,"image":"","url":""},
-    {"timeshift":4931000,"image":"https://cdn.bizon365.ru/181751/mirovozzrenka__3_.png","url":"https://leonidtalpis.com/mvs-seminar?utm_source=bizon&utm_campaign=marathon050326&utm_term=web060326","timer":538},
-    {"timeshift":5469000,"image":"","url":""}
-  ];
+// Banner scenario from JSON (timeshift in ms)
+var bannerScenario = [
+  {timeshift:1530000, image:"https://cdn.bizon365.ru/181751/mirovozzrenka__3_.png", url:"https://leonidtalpis.com/mvs-seminar?utm_source=bizon&utm_campaign=marathon050326&utm_term=web060326", timer:363},
+  {timeshift:1893000, image:"", url:""},
+  {timeshift:3760000, image:"https://cdn.bizon365.ru/181751/ts__3_.png", url:"https://leonidtalpis.com/the_assembly_point/payment?utm_source=bizon&utm_campaign=marathon050326&utm_term=web060326", timer:250},
+  {timeshift:4010000, image:"", url:""},
+  {timeshift:4830000, image:"https://cdn.bizon365.ru/181751/ts__3_.png", url:"https://leonidtalpis.com/the_assembly_point/payment?utm_source=bizon&utm_campaign=marathon050326&utm_term=web060326", timer:100},
+  {timeshift:4930000, image:"", url:""},
+  {timeshift:4931000, image:"https://cdn.bizon365.ru/181751/mirovozzrenka__3_.png", url:"https://leonidtalpis.com/mvs-seminar?utm_source=bizon&utm_campaign=marathon050326&utm_term=web060326", timer:538},
+  {timeshift:5469000, image:"", url:""}
+];
 
-  const container = document.getElementById('timed-banners');
-  let activeBanner = null;       // current visible banner data
-  let bannerTimerLeft = 0;       // seconds left on banner countdown
-  let lastVideoTime = 0;         // last known video time in ms
-  let timerInterval = null;
+var bannerContainer = document.getElementById('timed-banners');
+var currentActiveBanner = null;
 
-  function showBanner(item) {
-    activeBanner = item;
-    bannerTimerLeft = parseInt(item.timer) || 0;
-    container.innerHTML =
-      '<div class="banner-container active">' +
-        '<a href="' + item.url + '" target="_blank">' +
-          '<img src="' + item.image + '" alt="Баннер">' +
-        '</a>' +
-        (bannerTimerLeft > 0 ? '<div class="banner-timer">Предложение исчезнет через <span id="bl-timer">' + formatTime(bannerTimerLeft) + '</span></div>' : '') +
-      '</div>';
-  }
+function formatCountdown(sec) {
+  var m = Math.floor(sec / 60);
+  var s = sec % 60;
+  return (m > 0 ? m + ' мин ' : '') + s + ' сек';
+}
 
-  function hideBanner() {
-    activeBanner = null;
-    bannerTimerLeft = 0;
-    container.innerHTML = '';
-  }
+function showBannerEl(item, timeLeftSec) {
+  currentActiveBanner = item;
+  bannerContainer.innerHTML =
+    '<div class="banner-container active">' +
+      '<a href="' + item.url + '" target="_blank">' +
+        '<img src="' + item.image + '" alt="Баннер">' +
+      '</a>' +
+      (timeLeftSec > 0 ? '<div class="banner-timer">Предложение исчезнет через <span id="bl-timer">' + formatCountdown(timeLeftSec) + '</span></div>' : '') +
+    '</div>';
+}
 
-  function formatTime(sec) {
-    var m = Math.floor(sec / 60);
-    var s = sec % 60;
-    return (m > 0 ? m + ' мин ' : '') + s + ' сек';
-  }
+function hideBannerEl() {
+  currentActiveBanner = null;
+  bannerContainer.innerHTML = '';
+}
 
-  function updateTimerDisplay() {
-    var el = document.getElementById('bl-timer');
-    if (el && bannerTimerLeft > 0) {
-      el.textContent = formatTime(bannerTimerLeft);
+function updateCountdown(timeLeftSec) {
+  var el = document.getElementById('bl-timer');
+  if (el) el.textContent = formatCountdown(timeLeftSec);
+}
+
+function evaluateBannersAtTime(currentTimeMs) {
+  // Find the last triggered event at or before current time
+  var active = null;
+  for (var i = bannerScenario.length - 1; i >= 0; i--) {
+    if (currentTimeMs >= bannerScenario[i].timeshift) {
+      active = bannerScenario[i];
+      break;
     }
   }
 
-  // Determine which banner should be shown at a given video time (ms)
-  function evaluateBanners(currentTimeMs) {
-    // Find the last triggered event at or before current time
-    var active = null;
-    for (var i = scenario.length - 1; i >= 0; i--) {
-      if (currentTimeMs >= scenario[i].timeshift) {
-        active = scenario[i];
-        break;
-      }
-    }
-
-    if (!active || !active.image || !active.url) {
-      // Should hide
-      if (activeBanner) hideBanner();
-      return;
-    }
-
-    // Check if timer expired based on video time
-    var elapsed = (currentTimeMs - active.timeshift) / 1000;
-    var timerTotal = parseInt(active.timer) || 0;
-    if (timerTotal > 0 && elapsed > timerTotal) {
-      if (activeBanner) hideBanner();
-      return;
-    }
-
-    // Show or update banner
-    if (!activeBanner || activeBanner.timeshift !== active.timeshift) {
-      showBanner(active);
-    }
-
-    // Update countdown based on video time
-    if (timerTotal > 0) {
-      bannerTimerLeft = Math.max(0, Math.ceil(timerTotal - elapsed));
-      updateTimerDisplay();
-    }
+  // If none found, or it's a "hide" event
+  if (!active || !active.image || !active.url) {
+    if (currentActiveBanner) hideBannerEl();
+    return;
   }
 
-  // Init Kinescope player
-  var factory = new Kinescope.IframePlayer.Factory();
-  factory.create('kplayer', function(player) {
-    // Poll current time while playing
-    var pollId = null;
+  // Check if timer expired based on video time
+  var elapsedSec = (currentTimeMs - active.timeshift) / 1000;
+  var timerTotal = parseInt(active.timer) || 0;
+  if (timerTotal > 0 && elapsedSec > timerTotal) {
+    if (currentActiveBanner) hideBannerEl();
+    return;
+  }
 
-    function startPolling() {
-      if (pollId) return;
-      pollId = setInterval(function() {
-        player.getCurrentTime().then(function(sec) {
-          lastVideoTime = sec * 1000;
-          evaluateBanners(lastVideoTime);
-        });
-      }, 500);
-    }
+  var timeLeftSec = Math.max(0, Math.ceil(timerTotal - elapsedSec));
 
-    function stopPolling() {
-      if (pollId) { clearInterval(pollId); pollId = null; }
-    }
+  // Show banner if new, or update countdown
+  if (!currentActiveBanner || currentActiveBanner.timeshift !== active.timeshift) {
+    showBannerEl(active, timeLeftSec);
+  } else {
+    updateCountdown(timeLeftSec);
+  }
+}
 
-    player.on(player.Events.Playing, function() { startPolling(); });
-    player.on(player.Events.Pause, function() { stopPolling(); });
-    player.on(player.Events.Ended, function() { stopPolling(); hideBanner(); });
+// Kinescope IFrame API: use onKinescopeIframeAPIReady callback
+window.onKinescopeIframeAPIReady = function(playerFactory) {
+  playerFactory.create('kplayer', function(player) {
+    // Use TimeUpdate event — fires while video is playing with current time
+    player.on('TimeUpdate', function(data) {
+      // data.currentTime is in seconds
+      var currentTimeMs = (data.currentTime || 0) * 1000;
+      evaluateBannersAtTime(currentTimeMs);
+    });
 
-    // Also handle seek
-    player.on(player.Events.SeekedTo, function() {
-      player.getCurrentTime().then(function(sec) {
-        lastVideoTime = sec * 1000;
-        evaluateBanners(lastVideoTime);
-      });
+    // On seek, also re-evaluate
+    player.on('SeekedTo', function(data) {
+      var currentTimeMs = (data.currentTime || 0) * 1000;
+      evaluateBannersAtTime(currentTimeMs);
+    });
+
+    // On pause/ended — keep banner as-is (it was calculated from video time)
+    player.on('Ended', function() {
+      hideBannerEl();
     });
   });
-})();
+};
 </script>
+<script src="https://player.kinescope.io/latest/iframe.player.js"></script>
 
 </body>
 </html>
