@@ -115,11 +115,7 @@ body::before {
 <div class="main">
   <div class="video-col">
     <div class="video-wrap">
-      <iframe id="kplayer"
-        src="https://kinescope.io/embed/n7vzb6joLiAPGm9cqm7dVh?autoplay=0"
-        allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write;"
-        allowfullscreen>
-      </iframe>
+      <div id="kplayer-container" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
     </div>
     <!-- Баннеры будут появляться здесь по таймингам видео -->
     <div id="timed-banners"></div>
@@ -203,24 +199,27 @@ function evaluateBannersAtTime(currentTimeMs) {
   }
 }
 
-// Kinescope IFrame API: use onKinescopeIframeAPIReady callback
+// Kinescope IFrame API
 window.onKinescopeIframeAPIReady = function(playerFactory) {
-  playerFactory.create('kplayer', function(player) {
+  playerFactory.create('kplayer-container', {
+    url: 'https://kinescope.io/embed/n7vzb6joLiAPGm9cqm7dVh',
+    size: { width: '100%', height: '100%' },
+    behaviour: { autoPlay: false }
+  }).then(function(player) {
     // Use TimeUpdate event — fires while video is playing with current time
-    player.on('TimeUpdate', function(data) {
-      // data.currentTime is in seconds
+    player.on(player.Events.TimeUpdate, function(data) {
       var currentTimeMs = (data.currentTime || 0) * 1000;
       evaluateBannersAtTime(currentTimeMs);
     });
 
     // On seek, also re-evaluate
-    player.on('SeekedTo', function(data) {
+    player.on(player.Events.SeekedTo, function(data) {
       var currentTimeMs = (data.currentTime || 0) * 1000;
       evaluateBannersAtTime(currentTimeMs);
     });
 
-    // On pause/ended — keep banner as-is (it was calculated from video time)
-    player.on('Ended', function() {
+    // On ended — hide banner
+    player.on(player.Events.Ended, function() {
       hideBannerEl();
     });
   });
