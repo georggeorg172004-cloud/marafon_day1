@@ -1,1 +1,592 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Рандомайзер призов</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0d14;
+    --card: #13131e;
+    --border: #252538;
+    --accent: #ff3c6e;
+    --gold: #ffb800;
+    --cyan: #00e5ff;
+    --green: #4cff91;
+    --text: #f0f0f8;
+    --muted: #5a5a7a;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 36px 20px 80px;
+  }
+  body::before {
+    content: '';
+    position: fixed; top: -300px; left: 50%; transform: translateX(-50%);
+    width: 800px; height: 500px;
+    background: radial-gradient(ellipse, rgba(255,60,110,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
 
+  .container { max-width: 620px; margin: 0 auto; position: relative; }
+
+  h1 {
+    font-family: 'Unbounded', sans-serif;
+    font-size: clamp(20px, 5vw, 32px);
+    font-weight: 900;
+    text-align: center;
+    letter-spacing: -1px;
+    margin-bottom: 6px;
+  }
+  h1 em { color: var(--accent); font-style: normal; }
+  .subtitle { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+
+  /* SETUP PANEL */
+  .setup-panel { transition: opacity 0.3s; }
+  .setup-panel.hidden { display: none; }
+
+  .block {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    margin-bottom: 14px;
+  }
+  .block-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .range-row {
+    display: grid;
+    grid-template-columns: 1fr 26px 1fr;
+    align-items: center;
+    gap: 8px;
+  }
+  .range-sep { text-align: center; font-family: 'Unbounded', sans-serif; font-size: 18px; color: var(--muted); }
+
+  input[type="number"], input[type="text"] {
+    background: #0a0a11;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    padding: 11px 14px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input[type="number"] { font-family: 'Unbounded', sans-serif; font-size: 15px; text-align: center; }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,60,110,0.1); }
+  input::placeholder { color: var(--muted); }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .prize-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 38px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+  .prize-num { font-size: 16px; text-align: center; }
+
+  .btn-remove {
+    background: none; border: 1px solid var(--border);
+    border-radius: 10px; color: var(--muted); cursor: pointer;
+    font-size: 17px; height: 42px;
+    transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+  }
+  .btn-remove:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-add {
+    background: none; border: 1px dashed var(--border);
+    border-radius: 10px; color: var(--muted); cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    padding: 9px; width: 100%; margin-top: 4px; transition: all 0.2s;
+  }
+  .btn-add:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  .count-row { display: flex; align-items: center; gap: 12px; }
+  .count-label { font-size: 14px; flex: 1; }
+  .count-control {
+    display: flex; align-items: center; gap: 8px;
+    background: #0a0a11; border: 1px solid var(--border);
+    border-radius: 12px; padding: 5px 10px;
+  }
+  .count-btn {
+    background: none; border: none; color: var(--text);
+    cursor: pointer; font-size: 20px; width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; transition: background 0.15s;
+  }
+  .count-btn:hover { background: rgba(255,255,255,0.07); }
+  .count-val {
+    font-family: 'Unbounded', sans-serif; font-size: 18px;
+    font-weight: 700; min-width: 28px; text-align: center; color: var(--gold);
+  }
+
+  .btn-start {
+    background: linear-gradient(135deg, #ff3c6e, #ff7043);
+    border: none; border-radius: 16px; color: #fff; cursor: pointer;
+    font-family: 'Unbounded', sans-serif; font-size: 15px;
+    font-weight: 700; letter-spacing: 1px; padding: 18px;
+    width: 100%; margin-top: 4px;
+    box-shadow: 0 4px 30px rgba(255,60,110,0.35);
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+  .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(255,60,110,0.5); }
+  .btn-start:active { transform: scale(0.98); }
+
+  .error-msg {
+    background: rgba(255,60,110,0.1); border: 1px solid rgba(255,60,110,0.3);
+    border-radius: 10px; color: var(--accent); font-size: 13px;
+    padding: 10px 14px; margin-bottom: 12px; display: none;
+  }
+  .error-msg.show { display: block; animation: fadeIn 0.2s ease; }
+
+  /* ── GAME PANEL ── */
+  .game-panel { display: none; }
+  .game-panel.show { display: block; animation: fadeIn 0.3s ease; }
+
+  .progress-bar-wrap {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+  }
+  .progress-label {
+    font-family: 'Unbounded', sans-serif; font-size: 11px;
+    letter-spacing: 2px; color: var(--muted); white-space: nowrap;
+  }
+  .progress-track {
+    flex: 1; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold));
+    border-radius: 4px; transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  /* SLOT MACHINE */
+  .slot-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 32px 24px 28px;
+    text-align: center;
+    margin-bottom: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .slot-wrap::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(255,184,0,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .next-prize-label {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+  }
+  .next-prize-name {
+    font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 28px;
+    min-height: 28px;
+  }
+
+  .slot-number {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 88px; font-weight: 900; line-height: 1;
+    color: var(--gold);
+    text-shadow: 0 0 60px rgba(255,184,0,0.4);
+    min-height: 100px; display: flex; align-items: center; justify-content: center;
+    transition: text-shadow 0.3s;
+  }
+  .slot-number.spinning {
+    animation: spin 0.07s infinite;
+  }
+  @keyframes spin {
+    0%   { transform: translateY(-5px) scaleY(0.9); opacity: 0.6; }
+    50%  { transform: translateY(5px) scaleY(1.05); opacity: 1; }
+    100% { transform: translateY(-5px) scaleY(0.9); opacity: 0.6; }
+  }
+  .slot-number.landed {
+    animation: land 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes land {
+    0%   { transform: scale(0.7); opacity: 0; }
+    60%  { transform: scale(1.12); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* ROLL BUTTON */
+  .btn-roll {
+    background: linear-gradient(135deg, #ff3c6e, #ff7043);
+    border: none; border-radius: 16px; color: #fff; cursor: pointer;
+    font-family: 'Unbounded', sans-serif; font-size: 16px;
+    font-weight: 700; letter-spacing: 1px; padding: 20px;
+    width: 100%;
+    box-shadow: 0 4px 30px rgba(255,60,110,0.4);
+    transition: transform 0.15s, box-shadow 0.2s, background 0.3s;
+    position: relative; overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .btn-roll:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(255,60,110,0.55); }
+  .btn-roll:active:not(:disabled) { transform: scale(0.98); }
+  .btn-roll:disabled { opacity: 0.4; cursor: default; }
+  .btn-roll.done {
+    background: linear-gradient(135deg, #1a5c3a, #1a7a4a);
+    box-shadow: 0 4px 30px rgba(76,255,145,0.2);
+  }
+
+  /* WINNERS LIST */
+  .winners-section { }
+  .winners-label {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .winner-card {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 18px; margin-bottom: 8px;
+    animation: slideUp 0.4s cubic-bezier(0.34,1.4,0.64,1);
+  }
+  @keyframes slideUp {
+    from { opacity:0; transform: translateY(20px) scale(0.95); }
+    to   { opacity:1; transform: translateY(0) scale(1); }
+  }
+  .winner-card.place-1 { border-color: rgba(255,184,0,0.45); }
+  .winner-card.place-2 { border-color: rgba(180,180,210,0.3); }
+  .winner-card.place-3 { border-color: rgba(200,120,40,0.3); }
+
+  .w-medal { font-size: 20px; min-width: 28px; text-align: center; }
+  .w-num {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 26px; font-weight: 900; color: var(--gold); min-width: 72px;
+  }
+  .w-prize { flex: 1; font-size: 14px; font-weight: 500; }
+  .w-prize small {
+    display: block; font-size: 10px; color: var(--muted); margin-top: 2px;
+    text-transform: uppercase; letter-spacing: 1.5px; font-family: 'Unbounded', sans-serif;
+  }
+
+  .btn-reset {
+    background: none; border: 1px solid var(--border);
+    border-radius: 14px; color: var(--muted); cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    padding: 14px; width: 100%; margin-top: 8px;
+    transition: all 0.2s;
+  }
+  .btn-reset:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  canvas#confetti {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    pointer-events: none; z-index: 999;
+  }
+</style>
+</head>
+<style>
+  .brand {
+    position: fixed;
+    top: 18px; right: 24px;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-shadow: 0 0 18px rgba(255,184,0,0.5);
+    z-index: 100;
+    pointer-events: none;
+  }
+</style>
+<body>
+<canvas id="confetti"></canvas>
+<div class="brand">Talpis</div>
+<div class="container">
+  <h1>Рандо<em>майзер</em></h1>
+  <p class="subtitle">Крути по одному — победители появляются по очереди</p>
+
+  <!-- SETUP -->
+  <div class="setup-panel" id="setup-panel">
+    <div class="error-msg" id="error-msg"></div>
+
+    <div class="block">
+      <div class="block-title">Диапазон чисел</div>
+      <div class="range-row">
+        <input type="number" id="range-from" placeholder="От" value="1">
+        <div class="range-sep">–</div>
+        <input type="number" id="range-to" placeholder="До" value="1000">
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-title">Количество победителей</div>
+      <div class="count-row">
+        <div class="count-label">Сколько человек выиграют?</div>
+        <div class="count-control">
+          <button class="count-btn" onclick="changeCount(-1)">−</button>
+          <div class="count-val" id="count-val">5</div>
+          <button class="count-btn" onclick="changeCount(1)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-title">Призы (по местам)</div>
+      <div id="prizes-list"></div>
+      <button class="btn-add" onclick="addPrize()">+ Добавить приз</button>
+    </div>
+
+    <button class="btn-start" onclick="startGame()">▶ &nbsp;Начать розыгрыш</button>
+  </div>
+
+  <!-- GAME -->
+  <div class="game-panel" id="game-panel">
+
+    <div class="progress-bar-wrap">
+      <div class="progress-label" id="progress-label">0 / 5</div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+
+    <div class="slot-wrap">
+      <div class="next-prize-label" id="prize-label">Следующий приз</div>
+      <div class="next-prize-name" id="prize-name">—</div>
+      <div class="slot-number" id="slot-number">?</div>
+    </div>
+
+    <button class="btn-roll" id="btn-roll" onclick="rollOne()">🎲 &nbsp;КРУТИТЬ!</button>
+
+    <div class="winners-section" id="winners-section">
+      <div class="winners-label" id="winners-label" style="display:none">Уже выиграли</div>
+      <div id="winners-list"></div>
+    </div>
+
+    <button class="btn-reset" onclick="resetGame()">↩ Начать заново</button>
+  </div>
+</div>
+
+<script>
+  const medals = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+  let winCount = 5, prizeRows = 0;
+
+  // Game state
+  let pool = [], prizes = [], revealed = 0, spinning = false;
+
+  function changeCount(delta) {
+    winCount = Math.max(1, Math.min(20, winCount + delta));
+    document.getElementById('count-val').textContent = winCount;
+    syncPrizeNums();
+  }
+
+  function syncPrizeNums() {
+    document.querySelectorAll('.prize-row').forEach((row, i) => {
+      const el = row.querySelector('.prize-num');
+      if (el) el.textContent = medals[i] || (i+1)+'.';
+    });
+  }
+
+  function addPrize(name = '') {
+    prizeRows++;
+    const id = prizeRows;
+    const list = document.getElementById('prizes-list');
+    const idx = list.querySelectorAll('.prize-row').length;
+    const row = document.createElement('div');
+    row.className = 'prize-row'; row.id = 'prow-' + id;
+    row.innerHTML = `
+      <div class="prize-num">${medals[idx] || (idx+1)+'.'}</div>
+      <input type="text" id="prize-${id}" placeholder="Название приза" value="${name}">
+      <button class="btn-remove" onclick="removePrize(${id})">×</button>
+    `;
+    list.appendChild(row);
+  }
+
+  function removePrize(id) {
+    document.getElementById('prow-'+id)?.remove();
+    syncPrizeNums();
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg; el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  function startGame() {
+    const from = parseInt(document.getElementById('range-from').value);
+    const to   = parseInt(document.getElementById('range-to').value);
+    if (isNaN(from) || isNaN(to)) { showError('Введи корректный диапазон!'); return; }
+    if (from >= to) { showError('Начало должно быть меньше конца!'); return; }
+    if (to - from + 1 < winCount) { showError(`В диапазоне ${from}–${to} меньше ${winCount} уникальных чисел!`); return; }
+
+    prizes = Array.from(document.querySelectorAll('.prize-row')).map(row => {
+      const id = row.id.replace('prow-','');
+      return document.getElementById('prize-'+id)?.value.trim() || '';
+    });
+
+    // Shuffle unique random numbers
+    const allNums = [];
+    const used = new Set();
+    while (allNums.length < winCount) {
+      const n = Math.floor(Math.random() * (to - from + 1)) + from;
+      if (!used.has(n)) { used.add(n); allNums.push(n); }
+    }
+    pool = allNums;
+    revealed = 0;
+
+    document.getElementById('setup-panel').classList.add('hidden');
+    document.getElementById('game-panel').classList.add('show');
+    document.getElementById('winners-list').innerHTML = '';
+    document.getElementById('winners-label').style.display = 'none';
+
+    updateUI();
+  }
+
+  function updateUI() {
+    const total = pool.length;
+    const done  = revealed;
+    const pct   = (done / total) * 100;
+
+    document.getElementById('progress-label').textContent = `${done} / ${total}`;
+    document.getElementById('progress-fill').style.width = pct + '%';
+
+    if (done < total) {
+      const prizeIdx = done;
+      const prizeName = prizes[prizeIdx] || prizes[prizes.length-1] || '';
+      document.getElementById('prize-label').textContent = `Приз ${done+1} из ${total}`;
+      document.getElementById('prize-name').textContent = prizeName || '—';
+      document.getElementById('slot-number').textContent = '?';
+      document.getElementById('slot-number').className = 'slot-number';
+      const btn = document.getElementById('btn-roll');
+      btn.disabled = false;
+      btn.className = 'btn-roll';
+      btn.textContent = '🎲  КРУТИТЬ!';
+    } else {
+      document.getElementById('prize-label').textContent = 'Розыгрыш завершён!';
+      document.getElementById('prize-name').textContent = '🎉 Все победители определены';
+      document.getElementById('slot-number').textContent = '✓';
+      document.getElementById('slot-number').className = 'slot-number';
+      const btn = document.getElementById('btn-roll');
+      btn.disabled = true;
+      btn.className = 'btn-roll done';
+      btn.textContent = '✓  Готово!';
+      launchConfetti();
+    }
+  }
+
+  function rollOne() {
+    if (spinning || revealed >= pool.length) return;
+    spinning = true;
+    const btn = document.getElementById('btn-roll');
+    btn.disabled = true;
+
+    const slotEl = document.getElementById('slot-number');
+    slotEl.className = 'slot-number spinning';
+
+    const target = pool[revealed];
+    let ticks = 0;
+    const maxTicks = 22;
+    const from = parseInt(document.getElementById('range-from').value);
+    const to   = parseInt(document.getElementById('range-to').value);
+
+    const iv = setInterval(() => {
+      const fake = Math.floor(Math.random() * (to - from + 1)) + from;
+      slotEl.textContent = fake;
+      ticks++;
+      if (ticks >= maxTicks) {
+        clearInterval(iv);
+        slotEl.className = 'slot-number landed';
+        slotEl.textContent = target;
+        addWinnerCard(revealed, target, prizes[revealed] || prizes[prizes.length-1] || '');
+        revealed++;
+        spinning = false;
+        updateUI();
+      }
+    }, 65);
+  }
+
+  function addWinnerCard(idx, num, prize) {
+    document.getElementById('winners-label').style.display = 'block';
+    const list = document.getElementById('winners-list');
+    const card = document.createElement('div');
+    card.className = `winner-card place-${idx+1}`;
+    card.innerHTML = `
+      <div class="w-medal">${medals[idx] || (idx+1)}</div>
+      <div class="w-num">${num}</div>
+      <div class="w-prize">${prize || '<span style="color:var(--muted)">—</span>'}<small>Место ${idx+1}</small></div>
+    `;
+    // Insert at top so newest is first
+    list.insertBefore(card, list.firstChild);
+    // mini confetti pop for each reveal
+    if (idx === 0) launchConfettiSmall();
+  }
+
+  function resetGame() {
+    revealed = 0; pool = []; prizes = [];
+    document.getElementById('game-panel').classList.remove('show');
+    document.getElementById('setup-panel').classList.remove('hidden');
+    document.getElementById('slot-number').textContent = '?';
+    document.getElementById('winners-list').innerHTML = '';
+  }
+
+  function launchConfettiSmall() {
+    confettiBurst(60, 0.6);
+  }
+  function launchConfetti() {
+    confettiBurst(160, 1);
+  }
+
+  function confettiBurst(count, scale) {
+    const canvas = document.getElementById('confetti');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const colors = ['#ff3c6e','#ffb800','#00e5ff','#ff7043','#a259ff','#4cff91'];
+    const pieces = Array.from({length: count}, () => ({
+      x: Math.random() * canvas.width, y: canvas.height * 0.4,
+      r: (Math.random() * 7 + 3) * scale,
+      c: colors[Math.floor(Math.random() * colors.length)],
+      vx: (Math.random() * 12 - 6) * scale,
+      vy: (Math.random() * -14 - 2) * scale,
+      rot: Math.random() * 360, rs: Math.random() * 10 - 5,
+      shape: Math.random() > 0.5 ? 'rect' : 'circle'
+    }));
+    let frame = 0;
+    const maxFrames = Math.round(100 * scale + 40);
+    function draw() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      pieces.forEach(p => {
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot * Math.PI/180);
+        ctx.fillStyle = p.c; ctx.globalAlpha = Math.max(0, 1 - frame/maxFrames);
+        if (p.shape === 'circle') { ctx.beginPath(); ctx.arc(0,0,p.r,0,Math.PI*2); ctx.fill(); }
+        else { ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r); }
+        ctx.restore();
+        p.x += p.vx; p.y += p.vy; p.vy += 0.4; p.rot += p.rs;
+      });
+      frame++;
+      if (frame < maxFrames) requestAnimationFrame(draw);
+      else ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+    draw();
+  }
+
+  // Init
+  addPrize('Первый приз 🥇');
+  addPrize('Второй приз 🥈');
+  addPrize('Третий приз 🥉');
+  addPrize('Четвёртый приз');
+  addPrize('Пятый приз');
+</script>
+</body>
+</html>
