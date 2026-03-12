@@ -43,13 +43,6 @@ body::before {
   display: flex; width: 100%; max-width: 900px;
   padding: 20px 24px 40px; flex-direction: column; align-items: center; flex: 1;
 }
-.video-col { width: 100%; display: flex; flex-direction: column; gap: 20px; }
-.video-wrap {
-  position: relative; padding-top: 56.25%; width: 100%;
-  border-radius: 12px; overflow: hidden; background: #111;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
-}
-.video-wrap iframe { position: absolute; top:0; left:0; width:100%; height:100%; border:0; }
 
 @media (max-width: 900px) {
   .main { padding: 16px; }
@@ -71,23 +64,6 @@ body::before {
 </div>
 
 <div class="main">
-  <div class="video-col">
-    <div class="video-wrap">
-      <iframe id="kplayer"
-        src="https://kinescope.io/embed/cGXzSfG8qNRkjC6z1jX6yJ?autoplay=0"
-        allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write;"
-        allowfullscreen>
-      </iframe>
-    </div>
-    <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
-      <a href="https://leonidtalpis.com/mvs-seminar?utm_source=zoom090326&utm_campaign=marathon050326&utm_term=web090326" target="_blank" style="display:block; text-decoration:none;">
-        <img src="https://cdn.bizon365.ru/181751/mirovozzrenka__3_.png" alt="Мировоззренческий семинар" style="width:100%; border-radius:12px; box-shadow:0 4px 24px rgba(233,30,99,0.25); transition:transform 0.15s, box-shadow 0.15s;">
-      </a>
-      <a href="https://leonidtalpis.com/the_assembly_point/payment?utm_source=zoom090326&utm_campaign=marathon050326&utm_term=web090326" target="_blank" style="display:block; text-decoration:none;">
-        <img src="https://cdn.bizon365.ru/181751/ts__3_.png" alt="Точка Сборки" style="width:100%; border-radius:12px; box-shadow:0 4px 24px rgba(233,30,99,0.25); transition:transform 0.15s, box-shadow 0.15s;">
-      </a>
-    </div>
-  </div>
 </div>
 
 </body>
