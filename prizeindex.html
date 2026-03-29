@@ -13,7 +13,7 @@
     --card: #13131e;
     --border: #252538;
     --accent: #ff3c6e;
-    --gold: #ffb800;
+    --gold: #d4b07a;
     --cyan: #00e5ff;
     --green: #4cff91;
     --text: #f0f0f8;
@@ -42,10 +42,20 @@
     font-weight: 900;
     text-align: center;
     letter-spacing: -1px;
-    margin-bottom: 6px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 12px;
   }
   h1 em { color: var(--gold); font-style: normal; }
-  .subtitle { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+  .subtitle {
+    color: var(--gold);
+    font-family: 'Unbounded', sans-serif;
+    font-size: clamp(11px, 2.5vw, 15px);
+    font-weight: 400;
+    white-space: nowrap;
+  }
 
   .setup-panel { transition: opacity 0.3s; }
   .setup-panel.hidden { display: none; }
@@ -326,8 +336,7 @@
 <body>
 <canvas id="confetti"></canvas>
 <div class="container">
-  <h1><em>Talpis</em></h1>
-  <p class="subtitle">Терапевтический вечер 31.03</p>
+  <h1><em>Talpis</em> <span class="subtitle">Терапевтический вечер 31.03</span></h1>
 
   <!-- SETUP -->
   <div class="setup-panel" id="setup-panel">
