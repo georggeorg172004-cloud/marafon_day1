@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Терапевтический вечер 31.03</title>
+<title>Talpis — Терапевтический вечер 31.03</title>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -43,10 +43,7 @@
     text-align: center;
     letter-spacing: -1px;
     margin-bottom: 32px;
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    gap: 12px;
+    color: var(--gold);
   }
   h1 em { color: var(--gold); font-style: normal; }
   .subtitle {
@@ -55,6 +52,19 @@
     font-size: inherit;
     font-weight: 900;
     white-space: nowrap;
+  }
+
+  .brand {
+    position: fixed;
+    top: 18px; right: 24px;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-shadow: 0 0 18px rgba(212,176,122,0.5);
+    z-index: 100;
+    pointer-events: none;
   }
 
   .setup-panel { transition: opacity 0.3s; }
@@ -336,7 +346,8 @@
 <body>
 <canvas id="confetti"></canvas>
 <div class="container">
-  <h1><em>Talpis</em> <span class="subtitle">Терапевтический вечер 31.03</span></h1>
+  <div class="brand">Talpis</div>
+  <h1>Терапевтический вечер 31.03</h1>
 
   <!-- SETUP -->
   <div class="setup-panel" id="setup-panel">
