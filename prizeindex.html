@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Рандомайзер призов</title>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -46,7 +47,6 @@
   h1 em { color: var(--accent); font-style: normal; }
   .subtitle { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 32px; }
 
-  /* SETUP PANEL */
   .setup-panel { transition: opacity 0.3s; }
   .setup-panel.hidden { display: none; }
 
@@ -65,6 +65,33 @@
     color: var(--muted);
     margin-bottom: 14px;
   }
+
+  /* FILE UPLOAD */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+  .upload-zone:hover { border-color: var(--cyan); background: rgba(0,229,255,0.03); }
+  .upload-zone.loaded { border-color: var(--green); border-style: solid; background: rgba(76,255,145,0.03); }
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .upload-icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-text { font-size: 14px; color: var(--muted); }
+  .upload-text strong { color: var(--text); }
+  .upload-info {
+    margin-top: 12px;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 12px;
+    color: var(--green);
+    display: none;
+  }
+
   .range-row {
     display: grid;
     grid-template-columns: 1fr 26px 1fr;
@@ -90,32 +117,9 @@
   input::placeholder { color: var(--muted); }
   input[type=number]::-webkit-inner-spin-button,
   input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input.auto-set { border-color: var(--green); color: var(--green); }
 
-  .prize-row {
-    display: grid;
-    grid-template-columns: 28px 1fr 38px;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
-    animation: fadeIn 0.2s ease;
-  }
   @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
-  .prize-num { font-size: 16px; text-align: center; }
-
-  .btn-remove {
-    background: none; border: 1px solid var(--border);
-    border-radius: 10px; color: var(--muted); cursor: pointer;
-    font-size: 17px; height: 42px;
-    transition: all 0.2s; display: flex; align-items: center; justify-content: center;
-  }
-  .btn-remove:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-add {
-    background: none; border: 1px dashed var(--border);
-    border-radius: 10px; color: var(--muted); cursor: pointer;
-    font-family: 'DM Sans', sans-serif; font-size: 13px;
-    padding: 9px; width: 100%; margin-top: 4px; transition: all 0.2s;
-  }
-  .btn-add:hover { border-color: var(--cyan); color: var(--cyan); }
 
   .count-row { display: flex; align-items: center; gap: 12px; }
   .count-label { font-size: 14px; flex: 1; }
@@ -175,7 +179,6 @@
     width: 0%;
   }
 
-  /* SLOT MACHINE */
   .slot-wrap {
     background: var(--card);
     border: 1px solid var(--border);
@@ -205,12 +208,23 @@
 
   .slot-number {
     font-family: 'Unbounded', sans-serif;
-    font-size: 88px; font-weight: 900; line-height: 1;
+    font-size: 72px; font-weight: 900; line-height: 1;
     color: var(--gold);
     text-shadow: 0 0 60px rgba(255,184,0,0.4);
-    min-height: 100px; display: flex; align-items: center; justify-content: center;
+    min-height: 90px; display: flex; align-items: center; justify-content: center;
     transition: text-shadow 0.3s;
   }
+  .slot-name {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 24px; font-weight: 500;
+    color: var(--cyan);
+    min-height: 36px;
+    margin-top: 16px;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .slot-name.visible { opacity: 1; animation: fadeIn 0.4s ease; }
+
   .slot-number.spinning {
     animation: spin 0.07s infinite;
   }
@@ -228,7 +242,6 @@
     100% { transform: scale(1); opacity: 1; }
   }
 
-  /* ROLL BUTTON */
   .btn-roll {
     background: linear-gradient(135deg, #ff3c6e, #ff7043);
     border: none; border-radius: 16px; color: #fff; cursor: pointer;
@@ -248,8 +261,6 @@
     box-shadow: 0 4px 30px rgba(76,255,145,0.2);
   }
 
-  /* WINNERS LIST */
-  .winners-section { }
   .winners-label {
     font-family: 'Unbounded', sans-serif;
     font-size: 10px; letter-spacing: 3px;
@@ -274,9 +285,11 @@
   .w-medal { font-size: 20px; min-width: 28px; text-align: center; }
   .w-num {
     font-family: 'Unbounded', sans-serif;
-    font-size: 26px; font-weight: 900; color: var(--gold); min-width: 72px;
+    font-size: 22px; font-weight: 900; color: var(--gold); min-width: 50px;
   }
-  .w-prize { flex: 1; font-size: 14px; font-weight: 500; }
+  .w-info { flex: 1; }
+  .w-name { font-size: 16px; font-weight: 600; color: var(--cyan); }
+  .w-prize { font-size: 13px; font-weight: 500; color: var(--text); margin-top: 2px; }
   .w-prize small {
     display: block; font-size: 10px; color: var(--muted); margin-top: 2px;
     text-transform: uppercase; letter-spacing: 1.5px; font-family: 'Unbounded', sans-serif;
@@ -295,9 +308,7 @@
     position: fixed; top:0; left:0; width:100%; height:100%;
     pointer-events: none; z-index: 999;
   }
-</style>
-</head>
-<style>
+
   .brand {
     position: fixed;
     top: 18px; right: 24px;
@@ -310,24 +321,51 @@
     z-index: 100;
     pointer-events: none;
   }
+
+  .participants-preview {
+    margin-top: 12px;
+    max-height: 120px;
+    overflow-y: auto;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    padding: 8px 0;
+    text-align: left;
+  }
+  .participants-preview::-webkit-scrollbar { width: 4px; }
+  .participants-preview::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 </style>
+</head>
 <body>
 <canvas id="confetti"></canvas>
 <div class="brand">Talpis</div>
 <div class="container">
   <h1>Рандо<em>майзер</em></h1>
-  <p class="subtitle">Крути по одному — победители появляются по очереди</p>
+  <p class="subtitle">Загрузи базу участников — крути по одному</p>
 
   <!-- SETUP -->
   <div class="setup-panel" id="setup-panel">
     <div class="error-msg" id="error-msg"></div>
 
     <div class="block">
-      <div class="block-title">Диапазон чисел</div>
+      <div class="block-title">База участников</div>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv">
+        <div class="upload-icon">📋</div>
+        <div class="upload-text" id="upload-text">
+          <strong>Нажми или перетащи</strong> файл .xlsx с именами
+        </div>
+        <div class="upload-info" id="upload-info"></div>
+        <div class="participants-preview" id="participants-preview"></div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-title">Диапазон (авто из файла)</div>
       <div class="range-row">
-        <input type="number" id="range-from" placeholder="От" value="1">
+        <input type="number" id="range-from" placeholder="От" value="1" readonly>
         <div class="range-sep">–</div>
-        <input type="number" id="range-to" placeholder="До" value="1000">
+        <input type="number" id="range-to" placeholder="До" value="0" readonly>
       </div>
     </div>
 
@@ -337,16 +375,15 @@
         <div class="count-label">Сколько человек выиграют?</div>
         <div class="count-control">
           <button class="count-btn" onclick="changeCount(-1)">−</button>
-          <div class="count-val" id="count-val">5</div>
+          <div class="count-val" id="count-val">3</div>
           <button class="count-btn" onclick="changeCount(1)">+</button>
         </div>
       </div>
     </div>
 
     <div class="block">
-      <div class="block-title">Призы (по местам)</div>
-      <div id="prizes-list"></div>
-      <button class="btn-add" onclick="addPrize()">+ Добавить приз</button>
+      <div class="block-title">Приз</div>
+      <input type="text" id="single-prize" placeholder="Название приза для всех победителей" value="Главный приз 🎁">
     </div>
 
     <button class="btn-start" onclick="startGame()">▶ &nbsp;Начать розыгрыш</button>
@@ -356,7 +393,7 @@
   <div class="game-panel" id="game-panel">
 
     <div class="progress-bar-wrap">
-      <div class="progress-label" id="progress-label">0 / 5</div>
+      <div class="progress-label" id="progress-label">0 / 3</div>
       <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
     </div>
 
@@ -364,6 +401,7 @@
       <div class="next-prize-label" id="prize-label">Следующий приз</div>
       <div class="next-prize-name" id="prize-name">—</div>
       <div class="slot-number" id="slot-number">?</div>
+      <div class="slot-name" id="slot-name"></div>
     </div>
 
     <button class="btn-roll" id="btn-roll" onclick="rollOne()">🎲 &nbsp;КРУТИТЬ!</button>
@@ -379,42 +417,75 @@
 
 <script>
   const medals = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
-  let winCount = 5, prizeRows = 0;
+  let winCount = 3;
+
+  // Participants from file
+  let participants = [];
 
   // Game state
-  let pool = [], prizes = [], revealed = 0, spinning = false;
+  let pool = [], revealed = 0, spinning = false;
+
+  // ── FILE UPLOAD ──
+  document.getElementById('file-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        const data = new Uint8Array(ev.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        participants = [];
+        for (let i = 0; i < json.length; i++) {
+          const row = json[i];
+          if (row && row[0] && String(row[0]).trim()) {
+            participants.push(String(row[0]).trim());
+          }
+        }
+
+        if (participants.length === 0) {
+          showError('Файл пустой или не удалось прочитать имена!');
+          return;
+        }
+
+        // Update range
+        document.getElementById('range-from').value = 1;
+        document.getElementById('range-to').value = participants.length;
+        document.getElementById('range-from').classList.add('auto-set');
+        document.getElementById('range-to').classList.add('auto-set');
+
+        const zone = document.getElementById('upload-zone');
+        zone.classList.add('loaded');
+        document.getElementById('upload-text').innerHTML = '<strong>✓ ' + file.name + '</strong>';
+        const info = document.getElementById('upload-info');
+        info.style.display = 'block';
+        info.textContent = participants.length + ' участников загружено';
+
+        // Preview
+        const preview = document.getElementById('participants-preview');
+        let html = '';
+        const show = Math.min(participants.length, 5);
+        for (let i = 0; i < show; i++) {
+          html += '<div>' + (i+1) + '. ' + participants[i] + '</div>';
+        }
+        if (participants.length > 5) {
+          html += '<div style="color:var(--muted)">...</div>';
+          html += '<div>' + participants.length + '. ' + participants[participants.length-1] + '</div>';
+        }
+        preview.innerHTML = html;
+
+      } catch (err) {
+        showError('Ошибка чтения файла: ' + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
 
   function changeCount(delta) {
     winCount = Math.max(1, Math.min(20, winCount + delta));
     document.getElementById('count-val').textContent = winCount;
-    syncPrizeNums();
-  }
-
-  function syncPrizeNums() {
-    document.querySelectorAll('.prize-row').forEach((row, i) => {
-      const el = row.querySelector('.prize-num');
-      if (el) el.textContent = medals[i] || (i+1)+'.';
-    });
-  }
-
-  function addPrize(name = '') {
-    prizeRows++;
-    const id = prizeRows;
-    const list = document.getElementById('prizes-list');
-    const idx = list.querySelectorAll('.prize-row').length;
-    const row = document.createElement('div');
-    row.className = 'prize-row'; row.id = 'prow-' + id;
-    row.innerHTML = `
-      <div class="prize-num">${medals[idx] || (idx+1)+'.'}</div>
-      <input type="text" id="prize-${id}" placeholder="Название приза" value="${name}">
-      <button class="btn-remove" onclick="removePrize(${id})">×</button>
-    `;
-    list.appendChild(row);
-  }
-
-  function removePrize(id) {
-    document.getElementById('prow-'+id)?.remove();
-    syncPrizeNums();
   }
 
   function showError(msg) {
@@ -423,26 +494,29 @@
     setTimeout(() => el.classList.remove('show'), 3500);
   }
 
+  let prizeName = '';
+
   function startGame() {
-    const from = parseInt(document.getElementById('range-from').value);
-    const to   = parseInt(document.getElementById('range-to').value);
-    if (isNaN(from) || isNaN(to)) { showError('Введи корректный диапазон!'); return; }
-    if (from >= to) { showError('Начало должно быть меньше конца!'); return; }
-    if (to - from + 1 < winCount) { showError(`В диапазоне ${from}–${to} меньше ${winCount} уникальных чисел!`); return; }
-
-    prizes = Array.from(document.querySelectorAll('.prize-row')).map(row => {
-      const id = row.id.replace('prow-','');
-      return document.getElementById('prize-'+id)?.value.trim() || '';
-    });
-
-    // Shuffle unique random numbers
-    const allNums = [];
-    const used = new Set();
-    while (allNums.length < winCount) {
-      const n = Math.floor(Math.random() * (to - from + 1)) + from;
-      if (!used.has(n)) { used.add(n); allNums.push(n); }
+    if (participants.length === 0) {
+      showError('Сначала загрузи файл с участниками!');
+      return;
     }
-    pool = allNums;
+
+    const total = participants.length;
+    if (total < winCount) {
+      showError('Участников (' + total + ') меньше, чем победителей (' + winCount + ')!');
+      return;
+    }
+
+    prizeName = document.getElementById('single-prize').value.trim() || 'Приз';
+
+    // Generate unique random indices
+    const used = new Set();
+    pool = [];
+    while (pool.length < winCount) {
+      const n = Math.floor(Math.random() * total);
+      if (!used.has(n)) { used.add(n); pool.push(n); }
+    }
     revealed = 0;
 
     document.getElementById('setup-panel').classList.add('hidden');
@@ -462,12 +536,13 @@
     document.getElementById('progress-fill').style.width = pct + '%';
 
     if (done < total) {
-      const prizeIdx = done;
-      const prizeName = prizes[prizeIdx] || prizes[prizes.length-1] || '';
-      document.getElementById('prize-label').textContent = `Приз ${done+1} из ${total}`;
-      document.getElementById('prize-name').textContent = prizeName || '—';
+      const prizeName_display = prizeName;
+      document.getElementById('prize-label').textContent = `Победитель ${done+1} из ${total}`;
+      document.getElementById('prize-name').textContent = prizeName_display || '—';
       document.getElementById('slot-number').textContent = '?';
       document.getElementById('slot-number').className = 'slot-number';
+      document.getElementById('slot-name').textContent = '';
+      document.getElementById('slot-name').className = 'slot-name';
       const btn = document.getElementById('btn-roll');
       btn.disabled = false;
       btn.className = 'btn-roll';
@@ -477,6 +552,8 @@
       document.getElementById('prize-name').textContent = '🎉 Все победители определены';
       document.getElementById('slot-number').textContent = '✓';
       document.getElementById('slot-number').className = 'slot-number';
+      document.getElementById('slot-name').textContent = '';
+      document.getElementById('slot-name').className = 'slot-name';
       const btn = document.getElementById('btn-roll');
       btn.disabled = true;
       btn.className = 'btn-roll done';
@@ -492,60 +569,68 @@
     btn.disabled = true;
 
     const slotEl = document.getElementById('slot-number');
+    const nameEl = document.getElementById('slot-name');
     slotEl.className = 'slot-number spinning';
+    nameEl.className = 'slot-name';
+    nameEl.textContent = '';
 
-    const target = pool[revealed];
+    const targetIdx = pool[revealed];
+    const targetNum = targetIdx + 1;
+    const targetName = participants[targetIdx];
+    const total = participants.length;
+
     let ticks = 0;
     const maxTicks = 22;
-    const from = parseInt(document.getElementById('range-from').value);
-    const to   = parseInt(document.getElementById('range-to').value);
 
     const iv = setInterval(() => {
-      const fake = Math.floor(Math.random() * (to - from + 1)) + from;
-      slotEl.textContent = fake;
+      const fakeIdx = Math.floor(Math.random() * total);
+      slotEl.textContent = fakeIdx + 1;
       ticks++;
       if (ticks >= maxTicks) {
         clearInterval(iv);
         slotEl.className = 'slot-number landed';
-        slotEl.textContent = target;
-        addWinnerCard(revealed, target, prizes[revealed] || prizes[prizes.length-1] || '');
+        slotEl.textContent = targetNum;
+        setTimeout(() => {
+          nameEl.textContent = targetName;
+          nameEl.className = 'slot-name visible';
+        }, 300);
+        addWinnerCard(revealed, targetNum, targetName, prizeName);
         revealed++;
         spinning = false;
-        updateUI();
+        setTimeout(() => updateUI(), 2000);
       }
     }, 65);
   }
 
-  function addWinnerCard(idx, num, prize) {
+  function addWinnerCard(idx, num, name, prize) {
     document.getElementById('winners-label').style.display = 'block';
     const list = document.getElementById('winners-list');
     const card = document.createElement('div');
     card.className = `winner-card place-${idx+1}`;
     card.innerHTML = `
       <div class="w-medal">${medals[idx] || (idx+1)}</div>
-      <div class="w-num">${num}</div>
-      <div class="w-prize">${prize || '<span style="color:var(--muted)">—</span>'}<small>Место ${idx+1}</small></div>
+      <div class="w-num">#${num}</div>
+      <div class="w-info">
+        <div class="w-name">${name}</div>
+        <div class="w-prize">${prize || '<span style="color:var(--muted)">—</span>'}<small>Место ${idx+1}</small></div>
+      </div>
     `;
-    // Insert at top so newest is first
     list.insertBefore(card, list.firstChild);
-    // mini confetti pop for each reveal
     if (idx === 0) launchConfettiSmall();
   }
 
   function resetGame() {
-    revealed = 0; pool = []; prizes = [];
+    revealed = 0; pool = [];
     document.getElementById('game-panel').classList.remove('show');
     document.getElementById('setup-panel').classList.remove('hidden');
     document.getElementById('slot-number').textContent = '?';
+    document.getElementById('slot-name').textContent = '';
+    document.getElementById('slot-name').className = 'slot-name';
     document.getElementById('winners-list').innerHTML = '';
   }
 
-  function launchConfettiSmall() {
-    confettiBurst(60, 0.6);
-  }
-  function launchConfetti() {
-    confettiBurst(160, 1);
-  }
+  function launchConfettiSmall() { confettiBurst(60, 0.6); }
+  function launchConfetti() { confettiBurst(160, 1); }
 
   function confettiBurst(count, scale) {
     const canvas = document.getElementById('confetti');
@@ -581,12 +666,7 @@
     draw();
   }
 
-  // Init
-  addPrize('Первый приз 🥇');
-  addPrize('Второй приз 🥈');
-  addPrize('Третий приз 🥉');
-  addPrize('Четвёртый приз');
-  addPrize('Пятый приз');
+
 </script>
 </body>
 </html>
