@@ -34,7 +34,7 @@
     pointer-events: none;
   }
 
-  .container { max-width: 620px; margin: 0 auto; position: relative; }
+  .container { max-width: 720px; margin: 0 auto; position: relative; }
 
   h1 {
     font-family: 'Unbounded', sans-serif;
@@ -288,10 +288,16 @@
     margin-bottom: 12px;
   }
 
+  #winners-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
   .winner-card {
-    display: flex; align-items: center; gap: 14px;
+    display: flex; align-items: center; gap: 10px;
     background: var(--card); border: 1px solid var(--border);
-    border-radius: 14px; padding: 14px 18px; margin-bottom: 8px;
+    border-radius: 14px; padding: 12px 14px;
     animation: slideUp 0.4s cubic-bezier(0.34,1.4,0.64,1);
   }
   @keyframes slideUp {
@@ -300,14 +306,14 @@
   }
   .winner-card.place-1, .winner-card.place-2, .winner-card.place-3 { border-color: var(--border); }
 
-  .w-medal { font-size: 20px; min-width: 28px; text-align: center; }
+  .w-medal { font-size: 16px; min-width: 22px; text-align: center; }
   .w-num {
     font-family: 'Unbounded', sans-serif;
-    font-size: 22px; font-weight: 900; color: var(--gold); min-width: 50px;
+    font-size: 16px; font-weight: 900; color: var(--gold); min-width: 36px;
   }
-  .w-info { flex: 1; }
-  .w-name { font-size: 16px; font-weight: 600; color: var(--cyan); }
-  .w-prize { font-size: 13px; font-weight: 500; color: var(--text); margin-top: 2px; }
+  .w-info { flex: 1; min-width: 0; }
+  .w-name { font-size: 13px; font-weight: 600; color: var(--cyan); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .w-prize { font-size: 11px; font-weight: 500; color: var(--text); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .w-prize small {
     display: block; font-size: 10px; color: var(--muted); margin-top: 2px;
     text-transform: uppercase; letter-spacing: 1.5px; font-family: 'Unbounded', sans-serif;
