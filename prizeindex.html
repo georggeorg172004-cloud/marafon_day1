@@ -298,9 +298,7 @@
     from { opacity:0; transform: translateY(20px) scale(0.95); }
     to   { opacity:1; transform: translateY(0) scale(1); }
   }
-  .winner-card.place-1 { border-color: rgba(255,184,0,0.45); }
-  .winner-card.place-2 { border-color: rgba(180,180,210,0.3); }
-  .winner-card.place-3 { border-color: rgba(200,120,40,0.3); }
+  .winner-card.place-1, .winner-card.place-2, .winner-card.place-3 { border-color: var(--border); }
 
   .w-medal { font-size: 20px; min-width: 28px; text-align: center; }
   .w-num {
@@ -347,7 +345,7 @@
 <canvas id="confetti"></canvas>
 <div class="container">
   <div class="brand">Talpis</div>
-  <h1>Терапевтический вечер 11.04</h1>
+  <h1>Дополнение 1</h1>
 
   <!-- SETUP -->
   <div class="setup-panel" id="setup-panel">
@@ -446,8 +444,10 @@
         participants = [];
         for (let i = 0; i < json.length; i++) {
           const row = json[i];
-          if (row && row[0] && String(row[0]).trim()) {
-            participants.push(String(row[0]).trim());
+          if (!row) continue;
+          const parts = row.filter(c => c && String(c).trim()).map(c => String(c).trim());
+          if (parts.length > 0) {
+            participants.push(parts.join(' '));
           }
         }
 
@@ -542,9 +542,8 @@
     document.getElementById('progress-fill').style.width = pct + '%';
 
     if (done < total) {
-      const prizeName_display = prizeName;
       document.getElementById('prize-label').textContent = `Победитель ${done+1} из ${total}`;
-      document.getElementById('prize-name').textContent = prizeName_display || '—';
+      document.getElementById('prize-name').textContent = prizeName || '—';
       document.getElementById('slot-number').textContent = '?';
       document.getElementById('slot-number').className = 'slot-number';
       document.getElementById('slot-name').textContent = '';
@@ -612,13 +611,13 @@
     document.getElementById('winners-label').style.display = 'block';
     const list = document.getElementById('winners-list');
     const card = document.createElement('div');
-    card.className = `winner-card place-${idx+1}`;
+    card.className = 'winner-card';
     card.innerHTML = `
-      <div class="w-medal">${medals[idx] || (idx+1)}</div>
+      <div class="w-medal">🎉</div>
       <div class="w-num">#${num}</div>
       <div class="w-info">
         <div class="w-name">${name}</div>
-        <div class="w-prize">${prize || '<span style="color:var(--muted)">—</span>'}<small>Место ${idx+1}</small></div>
+        <div class="w-prize">${prize || '<span style="color:var(--muted)">—</span>'}</div>
       </div>
     `;
     list.insertBefore(card, list.firstChild);
