@@ -408,7 +408,7 @@
       <div class="slot-name" id="slot-name"></div>
     </div>
 
-    <button class="btn-roll" id="btn-roll" onclick="rollOne()">🎲 &nbsp;КРУТИТЬ!</button>
+    <button class="btn-roll" id="btn-roll" onclick="rollOne()">🎲 &nbsp;КРУТИТЬ! <span style="font-size:11px;opacity:0.5;font-weight:400;margin-left:6px">(Space)</span></button>
 
     <div class="winners-section" id="winners-section">
       <div class="winners-label" id="winners-label" style="display:none">Уже выиграли</div>
@@ -671,6 +671,17 @@
     draw();
   }
 
+
+  // Hotkey: Space or Enter to roll
+  document.addEventListener('keydown', function(e) {
+    if (e.code === 'Space' || e.code === 'Enter') {
+      if (document.activeElement.tagName === 'INPUT') return;
+      const gamePanel = document.getElementById('game-panel');
+      if (!gamePanel.classList.contains('show')) return;
+      e.preventDefault();
+      rollOne();
+    }
+  });
 
 </script>
 </body>
